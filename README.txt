@@ -10,3 +10,9 @@ This repository is for compiling legacy SAC-SMA fortran code into a Python inter
 
 3) Compile the unit hydrgraph router
 >> f2py -c -m duamel duamel.f
+
+
+# Work in progress notes:
+ - Refactored PET
+ - Refactored initial state function
+ - Refactored optimization class
