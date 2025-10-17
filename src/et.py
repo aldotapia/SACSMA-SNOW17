@@ -16,8 +16,7 @@ KRS = 0.17
 
 def get_esa(t_a: np.ndarray) -> np.ndarray:
     """
-    Compute the saturation vapor pressure (es) from the mean air temperature
-    (tmean).
+    Compute the saturation vapor pressure (es) from the mean air temperature (tmean).
 
     Equation:
     --------
@@ -44,8 +43,7 @@ def get_esa(t_a: np.ndarray) -> np.ndarray:
 
 def get_delta(t_a: np.ndarray) -> np.ndarray:
     """
-    Compute the slope of the saturation vapor pressure curve (delta) from the
-    air temperature (t_a).
+    Compute the slope of the saturation vapor pressure curve (delta) from the air temperature (t_a).
 
     Equation:
     --------
@@ -72,12 +70,9 @@ def get_delta(t_a: np.ndarray) -> np.ndarray:
     return delta  # kPa °C^-1^
 
 
-def get_lambda(
-        t_a: np.ndarray = None, lambdaval: float = LAMBDA_VAL
-               ) -> np.ndarray:
+def get_lambda(t_a: np.ndarray = None, lambdaval: float = LAMBDA_VAL) -> np.ndarray:
     """
-    Compute the latent heat of vaporization (lambda) from the air temperature
-    (t_a).
+    Compute the latent heat of vaporization (lambda) from the air temperature (t_a).
 
     Equation:
     --------
@@ -93,8 +88,7 @@ def get_lambda(
     t_a: np.ndarray
         Air temperature in °C.
     lambdaval: float
-        Latent heat of vaporization in MJ kg^-1^. If not temperature is
-        provided
+        Latent heat of vaporization in MJ kg^-1^. If not temperature is provided
 
     Return
     ------
@@ -107,10 +101,34 @@ def get_lambda(
         return 2.501 - 0.002361 * t_a  # MJ kg^-1^
 
 
+def get_gamma(t_a: np.ndarray) -> np.ndarray:
+    """
+    Compute the psychrometric constant (gamma) from the air temperature (t_a).
+
+    Equation:
+    --------
+
+    $$\gamma = 0.066 \text{ kPa K}^{-1}$$
+
+    Where:
+    $\gamma$ is the psychrometric constant in kPa °C^-1^.
+
+    Arguments:
+    ---------
+    t_a : np.ndarray
+        Air temperature in °C.
+
+    Return:
+    ------
+    np.ndarray
+        Psychrometric constant in kPa °C^-1^.
+    """
+    return 0.066 * np.ones_like(t_a)
+
+
 def get_net_shortwave(r_s: np.ndarray, albedo: float = ALBEDO) -> np.ndarray:
     """
-    Compute the net shortwave radiation (R_ns) from the incoming shortwave
-    radiation (R_s) and albedo.
+    Compute the net shortwave radiation (R_ns) from the incoming shortwave radiation (R_s) and albedo.
 
     Equation:
     -------
@@ -165,8 +183,7 @@ def get_solar_declination(j: float) -> float:
 
 def get_sunset_hour_angle(lat: float, solar_declination: float) -> float:
     """
-    Compute the sunset hour angle (omega_s) from the latitude (phi) and solar
-    declination (delta).
+    Compute the sunset hour angle (omega_s) from the latitude (phi) and solar declination (delta).
 
     Equation:
     --------
@@ -225,8 +242,7 @@ def get_day_length(omega_s: float) -> float:
 
 def get_distance_sun(j: np.ndarray) -> np.ndarray:
     """
-    Compute the inverse relative distance from the Earth to the Sun (dr)
-    from the day of the year (j).
+    Compute the inverse relative distance from the Earth to the Sun (dr) from the day of the year (j).
 
     Equation:
     -------
@@ -258,9 +274,8 @@ def get_extraterrestrial_radiation(
     g_sc: float = G_SC,
 ) -> np.ndarray:
     """
-    Compute the extraterrestrial radiation (R_a) from the latitude (phi),
-    sunset hour angle (omega_s), distance from the Earth to the Sun (d_r),
-    and solar declination (delta).
+    Compute the extraterrestrial radiation (R_a) from the latitude (phi), sunset hour angle (omega_s),
+    distance from the Earth to the Sun (d_r), and solar declination (delta).
 
     Equation:
     --------
@@ -306,8 +321,7 @@ def get_extraterrestrial_radiation(
 
 def get_clear_sky_sr(ra: np.ndarray, elev: float) -> np.ndarray:
     """
-    Compute the clear sky solar radiation (R_s) from the extraterrestrial
-    radiation (R_a) and elevation (elev).
+    Compute the clear sky solar radiation (R_s) from the extraterrestrial radiation (R_a) and elevation (elev).
 
     Equation:
     --------
@@ -336,8 +350,7 @@ def get_clear_sky_sr(ra: np.ndarray, elev: float) -> np.ndarray:
 
 def get_cloud_factor(r_so: np.ndarray, r_s: np.ndarray) -> np.ndarray:
     """
-    Compute the cloud factor (f_c) from the clear sky solar radiation (R_so)
-    and the actual solar radiation (R_s).
+    Compute the cloud factor (f_c) from the clear sky solar radiation (R_so) and the actual solar radiation (R_s).
 
     Equation:
     --------
@@ -376,9 +389,8 @@ def get_net_longwave(
     sigma: float = STEFAN_BOLTZMANN,
 ) -> np.ndarray:
     """
-    Compute the net longwave radiation (R_nl) from the maximum temperature
-    (T_max), minimum temperature (T_min), actual vapor pressure (e_a), and
-    cloud factor (f_c).
+    Compute the net longwave radiation (R_nl) from the maximum temperature (T_max), minimum temperature (T_min),
+    actual vapor pressure (e_a), and cloud factor (f_c).
 
     Equation:
     --------
@@ -424,8 +436,7 @@ def get_net_longwave(
 
 def get_net_radiation(r_ns: np.ndarray, r_nl: np.ndarray) -> np.ndarray:
     """
-    Compute the net radiation (R_n) from the net shortwave radiation (R_ns)
-    and the net longwave radiation (R_nl).
+    Compute the net radiation (R_n) from the net shortwave radiation (R_ns) and the net longwave radiation (R_nl).
 
     Equation:
     --------
@@ -479,15 +490,10 @@ def get_atmospheric_pressure(elev: float) -> float:
 
 
 def get_gamma(
-    atm_press: float,
-    cp: float = CP,
-    lambda_: float = LAMBDA_VAL,
-    e: float = E,
-    use_psychrometric_constant: bool = False,
+    atm_press: float, cp: float = CP, lambda_: float = LAMBDA_VAL, e: float = E
 ) -> float:
     """
-    Compute the psychrometric constant (gamma) from the atmospheric pressure
-    (atm_press).
+    Compute the psychrometric constant (gamma) from the atmospheric pressure (atm_press).
 
     Equation:
     --------
@@ -499,8 +505,7 @@ def get_gamma(
     $P$ is the atmospheric pressure in kPa,
     $c_p$ specific heat at constant pressure in MJ kg^-1 C^-1^,
     $\lambda$ is the latent heat of vaporization in MJ kg^-1^.
-    $\varepsilon$ is the ratio of the molecular weight of water vapor to dry
-    air (dimensionless).
+    $\varepsilon$ is the ratio of the molecular weight of water vapor to dry air (dimensionless).
 
     Arguments:
     ---------
@@ -518,10 +523,7 @@ def get_gamma(
     float
         Psychrometric constant in kPa K^-1^.
     """
-    if use_psychrometric_constant:
-        return PSYCHROMETRIC_CONSTANT
-    else:
-        return (cp * atm_press) / (e * lambda_)
+    return (cp * atm_press) / (e * lambda_)
 
 
 def get_priestley_taylor_pet(
@@ -537,8 +539,7 @@ def get_priestley_taylor_pet(
     g: np.ndarray = 0,
 ):
     """
-    Compute the Priestley-Taylor potential evapotranspiration (PET) from the
-    maximum temperature (T_max), minimum temperature (T_min),
+    Compute the Priestley-Taylor potential evapotranspiration (PET) from the maximum temperature (T_max), minimum temperature (T_min),
     solar radiation (R_s), and other climatic variables.
 
     Equation:
@@ -617,16 +618,15 @@ def get_priestley_taylor_pet(
 
 
 def get_hargreaves_samani_pet(
-    t_min: np.ndarray, t_max: np.ndarray, lat: float, j: float, krs: float = KRS
+    t_min: np.ndarray, t_max: np.ndarray, lat: float, j: float
 ) -> np.ndarray:
     """
-    Compute the Hargreaves-Samani (HS) potential evapotranspiration (PET)
-    using the Hargreaves equation.
+    Compute the Hargreaves-Samani (HS) potential evapotranspiration (PET) using the Hargreaves equation.
 
     Equation:
     --------
 
-    $$PET = 0.0135 \times KT \times (T_a + 17.8)\times (T_{max} - T_{min})^{0.5} \times Ra$$
+    $$PET = 0.0135 \times KT \times (T_a + 17.8)\times (T_{max} - T_{min})^{0.5} \times Ra
 
     Where:
     ------
@@ -647,8 +647,6 @@ def get_hargreaves_samani_pet(
         Latitude in decimal degrees.
     j: float
         Julian day.
-    krs: float
-        Temperature correction factor (dimensionless).
 
     """
 
@@ -660,6 +658,6 @@ def get_hargreaves_samani_pet(
     d_r = get_distance_sun(j)
     r_a = get_extraterrestrial_radiation(lat, omega_s, d_r, d_s)
 
-    pet = 0.0135 * krs * r_a / lambda_ * (t_max - t_min) ** 0.5 * (t_a + 17.8)
+    pet = 0.0135 * KRS * r_a / lambda_ * (t_max - t_min) ** 0.5 * (t_a + 17.8)
     pet = np.maximum(pet, 0)
     return pet

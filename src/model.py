@@ -490,3 +490,193 @@ class Sacsma:
 
         self.last_cs = np.array(cs, dtype="f4")
 
+
+"""
+class Sacsma_only:
+
+    def __init__(self):
+        self.forcings = Forcings()
+        self.parameters = Sacsma_parameters()
+        self.hydrograph_parameters = Hydrograph_parameters()
+        self.states = Sacsma_states()
+        self.initial_states = Sacma_initial_states()
+        self.fluxes = Sacsma_fluxes()
+        self.general_parameters = General_parameters()
+        self.others = Others()
+        self.fluxes_df = "Run model first"
+        self.states_df = "Run model first"
+
+    def set_parameters(self, parameters: Sacsma_parameters):
+        for field in sacsma_parameter_keys:
+            value = float(getattr(parameters, field))
+            if value is not None:
+                setattr(self.parameters, field, value)
+
+
+    def set_hydrograph_parameters(self, parameters: Hydrograph_parameters):
+        for field in hydrograph_parameter_keys:
+            value = float(getattr(parameters, field))
+            if value is not None:
+                setattr(self.hydrograph_parameters, field, value)
+
+
+    def set_forcings(self, date, precip, max_temp, min_temp, srad, dayl):
+        if not pd.api.types.is_datetime64_any_dtype(date):
+            raise TypeError("Date must be a pandas datetime Series")
+
+        self.forcings.date = date
+        self.forcings.year = date.dt.year.to_numpy()
+        self.forcings.month = date.dt.month.to_numpy()
+        self.forcings.day = date.dt.day.to_numpy()
+        self.forcings.precip = precip
+        self.forcings.max_temp = max_temp
+        self.forcings.min_temp = min_temp
+        self.forcings.avg_temp = 0.5 * (self.forcings.max_temp + self.forcings.min_temp)
+        self.forcings.srad = srad
+        self.forcings.dayl = dayl
+
+        # timestep in different units
+        self.others.dt_seconds = int(
+            (self.forcings.date[1] - self.forcings.date[0]).total_seconds()
+        )
+        self.others.dt_minutes = self.others.dt_seconds / 60
+        self.others.dt_hours = self.others.dt_minutes / 60
+        self.others.dt_days = self.others.dt_hours / 24
+
+        # set an empty np.ndarray for states and fluxes
+        for field in state_keys:
+            setattr(self.states, field, np.zeros_like(self.forcings.precip))
+
+        for field in flux_keys:
+            setattr(self.fluxes, field, np.zeros_like(self.forcings.precip))
+
+    def set_initial_states(self, uztwc, uzfwc, lztwc, lzfsc, lzfpc, adimc):
+        self.initial_states.uztwc = uztwc
+        self.initial_states.uzfwc = uzfwc
+        self.initial_states.lztwc = lztwc
+        self.initial_states.lzfsc = lzfsc
+        self.initial_states.lzfpc = lzfpc
+        self.initial_states.adimc = adimc
+
+    def compute_et(self, alpha_pt=None):
+        if alpha_pt is None:
+            alpha_pt = self.general_parameters.alpha_pt
+        if (
+            self.general_parameters.latitude is None
+            or self.general_parameters.elevation is None
+        ):
+            raise ValueError("Latitude and elevation must be set in general parameters")
+
+        self.forcings.pet = self.forcings.pet = get_priestley_taylor_pet(
+            t_max=self.forcings.max_temp,
+            t_min=self.forcings.min_temp,
+            r_s=self.forcings.srad,
+            dayl=self.forcings.dayl,
+            j=self.forcings.date.dt.dayofyear,
+            lat=self.general_parameters.latitude,
+            elev=self.general_parameters.elevation,
+            alpha_pt=alpha_pt,
+        )
+
+        self.forcings.surf_pres = get_atmospheric_pressure(
+            self.general_parameters.elevation
+        )
+
+    def run(self):
+
+        # set states from initial states
+        uztwc = np.array(self.initial_states.uztwc, dtype="f4")
+        uzfwc = np.array(self.initial_states.uzfwc, dtype="f4")
+        lztwc = np.array(self.initial_states.lztwc, dtype="f4")
+        lzfsc = np.array(self.initial_states.lzfsc, dtype="f4")
+        lzfpc = np.array(self.initial_states.lzfpc, dtype="f4")
+        adimc = np.array(self.initial_states.adimc, dtype="f4")
+
+        for t in range(self.forcings.date.shape[0]):
+            # sacsma
+            surf, grnd, qq, tet = sacsma.exsac(
+                self.others.dt_seconds,
+                0,
+                self.forcings.avg_temp[t],
+                self.forcings.pet[t],
+                self.parameters.uztwm,
+                self.parameters.uzfwm,
+                self.parameters.uzk,
+                self.parameters.pctim,
+                self.parameters.adimp,
+                self.parameters.riva,
+                self.parameters.zperc,
+                self.parameters.rexp,
+                self.parameters.lztwm,
+                self.parameters.lzfsm,
+                self.parameters.lzfpm,
+                self.parameters.lzsk,
+                self.parameters.lzpk,
+                self.parameters.pfree,
+                self.parameters.side,
+                self.parameters.rserv,
+                uztwc,
+                uzfwc,
+                lztwc,
+                lzfsc,
+                lzfpc,
+                adimc,
+            )
+
+            # Saving states for this timestep
+            self.states.sacsma_uztwc[t] = uztwc
+            self.states.sacsma_uzfwc[t] = uzfwc
+            self.states.sacsma_lztwc[t] = lztwc
+            self.states.sacsma_lzfsc[t] = lzfsc
+            self.states.sacsma_lzfpc[t] = lzfpc
+            self.states.sacsma_adimc[t] = adimc
+
+            # Saving fluxes for this timestep
+            self.fluxes.sacsma_pet[t] = self.forcings.pet[t]
+            self.fluxes.sacsma_surf[t] = surf
+            self.fluxes.sacsma_grnd[t] = grnd
+            self.fluxes.sacsma_qq[t] = qq
+            self.fluxes.sacsma_tet[t] = tet
+
+        self.others.n_unit_hydro = (
+            self.forcings.date.shape[0] + self.others.m_unit_hydro
+        )
+
+        hydrograph_qq = unit_hydrograph.duamel(
+            self.fluxes.sacsma_qq,
+            self.hydrograph_parameters.unit_shape,
+            self.hydrograph_parameters.unit_scale,
+            self.others.dt_days,
+            self.others.n_unit_hydro,
+            self.others.m_unit_hydro,
+            self.others.k,
+            self.others.ntau,
+        )
+
+        self.fluxes.hydrograph_qq = hydrograph_qq[: -self.others.m_unit_hydro]
+
+        self.fluxes_df = pd.DataFrame(
+            {
+                "sacsma_uh_qq": self.fluxes.hydrograph_qq,
+                "sacsma_surf": self.fluxes.sacsma_surf,
+                "sacsma_grnd": self.fluxes.sacsma_grnd,
+                "sacsma_qq": self.fluxes.sacsma_qq,
+                "sacsma_tet": self.fluxes.sacsma_tet,
+            },
+            index=self.forcings.date,
+        )
+
+        self.states_df = pd.DataFrame(
+            {
+                "sacsma_uztwc": self.states.sacsma_uztwc,
+                "sacsma_uzfwc": self.states.sacsma_uzfwc,
+                "sacsma_lztwc": self.states.sacsma_lztwc,
+                "sacsma_lzfsc": self.states.sacsma_lzfsc,
+                "sacsma_lzfpc": self.states.sacsma_lzfpc,
+                "sacsma_adimc": self.states.sacsma_adimc,
+            },
+            index=self.forcings.date,
+        )
+        
+        
+"""

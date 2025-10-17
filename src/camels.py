@@ -1,12 +1,6 @@
-"""
-To do:
- - Generalize paths and refactor code to be more modular
-"""
-
 import glob
 from pathlib import Path
 import pandas as pd
-
 
 # Hard-code paths
 DATA_DIR = "/home/aldotapia/data/camels"
